@@ -52,6 +52,9 @@ class ResponseBuilder extends ResponseBuilderBase
 	/** @var array */
 	protected $http_headers = [];
 
+    /** @var bool */
+	protected $convert_data = false;
+
 	// -----------------------------------------------------------------------------------------------------------
 
 	/**
@@ -291,6 +294,17 @@ class ResponseBuilder extends ResponseBuilderBase
 		return $this;
 	}
 
+    /**
+     * @param false $convert_data
+     * @return $this
+     */
+    public function convertData($convert_data = false): self
+    {
+        $this->convert_data = $convert_data;
+
+        return $this;
+    }
+
 	/**
 	 * Builds and returns final HttpResponse. It's safe to call build() as many times as needed, as no
 	 * internal state is changed. It's also safe to alter any parameter set previously and call build()
@@ -409,15 +423,17 @@ class ResponseBuilder extends ResponseBuilderBase
 	                                 $data = null, array $debug_data = null): array
 	{
 		// ensure $data is either @null, array or object of class with configured mapping.
-		$data = (new Converter())->convert($data);
-		if ($data !== null) {
-			// ensure we get object in final JSON structure in data node
-			$data = (object)$data;
-		}
+        if(!$this->convert_data) {
+            $data = (new Converter())->convert($data);
+            if ($data !== null) {
+                // ensure we get object in final JSON structure in data node
+                $data = (object)$data;
+            }
 
-		if ($data === null && Config::get(RB::CONF_KEY_DATA_ALWAYS_OBJECT, false)) {
-			$data = (object)[];
-		}
+            if ($data === null && Config::get(RB::CONF_KEY_DATA_ALWAYS_OBJECT, false)) {
+                $data = (object)[];
+            }
+        }
 
 		// get human readable message for API code or use message string (if given instead of API code)
 		if (\is_int($msg_or_api_code)) {
